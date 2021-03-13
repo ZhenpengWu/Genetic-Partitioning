@@ -1,7 +1,6 @@
 import os
 from typing import List
 
-from model.block import Block
 from model.cell import Cell
 from model.net import Net
 from util.colors import random_colors
@@ -12,10 +11,6 @@ class Circuit:
         self.cells: List[Cell] = []
         self.nets: List[Net] = []
         self.benchmark = None
-        self.block: List[Block] = []
-
-        self.iteration = None
-        self.cutsize = None
 
     def parse_file(self, file) -> None:
         """

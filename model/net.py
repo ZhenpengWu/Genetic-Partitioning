@@ -4,8 +4,8 @@ from model.cell import Cell
 
 
 class Net:
-    def __init__(self, nid, color) -> None:
-        self.net_id = nid
+    def __init__(self, net_id, color) -> None:
+        self.net_id = net_id
         self.cells: List[Cell] = []
         self.color = color
 
@@ -23,25 +23,3 @@ class Net:
         :return: the sinks, which are the cell except the first one
         """
         return self.cells[1:]
-
-    # def move_node(self, result, F, T):
-    #     if result.nets_distribution[self.net_id][T] == 0:
-    #         for nei in self.cells:
-    #             if nei.is_unlocked():
-    #                 nei.adjust_gain(result.blocks, 1)
-    #     elif result.nets_distribution[self.net_id][T] == 1:
-    #         for nei in self.cells:
-    #             if nei.is_unlocked() and nei.block_id == T:
-    #                 nei.adjust_gain(result.blocks, -1)
-    #
-    #     result.nets_distribution[self.net_id][F] -= 1
-    #     result.nets_distribution[self.net_id][T] += 1
-    #
-    #     if result.nets_distribution[self.net_id][F] == 0:
-    #         for nei in self.cells:
-    #             if nei.is_unlocked():
-    #                 nei.adjust_gain(result.blocks, -1)
-    #     elif result.nets_distribution[self.net_id][F] == 1:
-    #         for nei in self.cells:
-    #             if nei.is_unlocked() and nei.block_id == F:
-    #                 nei.adjust_gain(result.blocks, 1)

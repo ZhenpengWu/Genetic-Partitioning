@@ -5,7 +5,7 @@ from tkinter import ALL, Canvas, StringVar, Tk, E, N, S, W, filedialog, DISABLED
 from tkinter.ttk import Button, Frame, Label
 
 from model.circuit import Circuit
-from partitioning import partition
+from fm import partition
 from util.logging import init_logging
 
 

@@ -24,7 +24,7 @@ class Bucket:
         """Add a node with initial gain to the Bucket List."""
         # add node
         gain = data.get_node_gain(cell)
-        self.__bucket_list[gain][cell.nid] = cell
+        self.__bucket_list[gain][cell.cell_id] = cell
 
         self.__count += 1
         # update max gain pointer
@@ -43,7 +43,7 @@ class Bucket:
         """Remove a node from the Bucket List."""
         # remove node
         gain = data.get_node_gain(cell)
-        del self.__bucket_list[gain][cell.nid]
+        del self.__bucket_list[gain][cell.cell_id]
         self.__update_max_gain()
         self.__count -= 1
 

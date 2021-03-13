@@ -2,8 +2,8 @@ from util.colors import locked_color
 
 
 class Cell:
-    def __init__(self, nid: int) -> None:
-        self.nid: int = nid
+    def __init__(self, cell_id: int) -> None:
+        self.cell_id: int = cell_id
         self.nets = []
         self.text_id = None
         self.rect_id = None
@@ -11,7 +11,7 @@ class Cell:
         self.y = None
 
     def __str__(self):
-        return str(self.nid)
+        return str(self.cell_id)
 
     def get_net_size(self) -> int:
         return len(self.nets)
@@ -32,10 +32,10 @@ class Cell:
         self.__set_text(canvas)
 
         node_count[block_id] += 1
-        dir = (node_count[block_id] % app.rows) == 0
+        next_col = (node_count[block_id] % app.rows) == 0
 
-        x[block_id] = x2 + app.node_pad if dir else x1
-        y[block_id] = app.size // 2 if dir else y2 + app.node_pad
+        x[block_id] = x2 + app.node_pad if next_col else x1
+        y[block_id] = app.size // 2 if next_col else y2 + app.node_pad
 
     def center_coords(self, canvas):
         """
@@ -53,11 +53,11 @@ class Cell:
         x, y = self.center_coords(canvas)
         if self.text_id is None:
             self.text_id = canvas.create_text(
-                x, y, font=self.__get_font(canvas), text=str(self.nid)
+                x, y, font=self.__get_font(canvas), text=str(self.cell_id)
             )
         else:
             canvas.coords(self.text_id, x, y)
-            canvas.itemconfigure(self.text_id, text=str(self.nid))
+            canvas.itemconfigure(self.text_id, text=str(self.cell_id))
 
     def __get_font(self, canvas):
         """
