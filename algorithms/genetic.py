@@ -1,6 +1,7 @@
 import bisect
 import logging
 import random
+from functools import reduce
 
 from algorithms.kl import init_partition, kl_inner
 from model.circuit import Circuit
@@ -72,7 +73,11 @@ def select_parent(population):
 
 
 def calculate_fitness(population):
-    worst_cutsize, best_cutsize = best_worst_finess(population)
+    worst_cutsize, best_cutsize = population[0].mincut, population[0].mincut
+    for chromeosome in population:
+        worst_cutsize = max(chromeosome.mincut, worst_cutsize)
+        best_cutsize = min(chromeosome.mincut, best_cutsize)
+
     fitness_list, search_list = [], []
     total_fitness = 0
     for chromeosome in population:
@@ -127,9 +132,7 @@ def mutation(offspring):
         offspring[i] = flip(offspring[i])
 
     # balance
-    diff = 0
-    for x in offspring:
-        diff += 1 if x == 1 else -1
+    diff = reduce(lambda a, b: a + (1 if b == 1 else -1), offspring, 0)
 
     for i in random.sample(range(n), n):
         if (n % 2 == 0 and diff == 0) or (n % 2 == 1 and abs(diff) <= 1):
@@ -144,14 +147,6 @@ def mutation(offspring):
 
 def flip(block_id):
     return (block_id + 1) % 2
-
-
-def best_worst_finess(population):
-    worst_cutsize, best_cutsize = population[0].mincut, population[0].mincut
-    for chromeosome in population:
-        worst_cutsize = max(chromeosome.mincut, worst_cutsize)
-        best_cutsize = min(chromeosome.mincut, best_cutsize)
-    return worst_cutsize, best_cutsize
 
 
 def search_parent(population, search_list, total_fitness):

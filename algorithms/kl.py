@@ -54,9 +54,9 @@ def kl_reset(circuit: Circuit, data, app=None, genetic=False):
         "iteration {}: best mincut = {}".format(data.iteration, data.cutsize)
     )
 
-    data.iteration += 1
     if app is not None:
         app.update_canvas(data)
+    data.iteration += 1
 
     # continue for up to 6 iterations or until mincut stops improving
     if data.iteration <= 6 and data.mincut != data.prev_mincut:
