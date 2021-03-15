@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from app import App
 
@@ -29,5 +30,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--infile", help="test input file")
 
     args = parser.parse_args()
+
+    sys.setrecursionlimit(1500)
 
     App(args)

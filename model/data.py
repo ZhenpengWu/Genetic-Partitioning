@@ -3,14 +3,15 @@ from model.block import Block
 
 class Data:
 
-    def __init__(self, pmax, nets_size, cells_size):
+    def __init__(self, pmax, nets_size, nodes_block_id):
         self.iteration = 1
 
         self.blocks = [Block(pmax), Block(pmax)]
         self.nets_distribution = [[0, 0]] * nets_size
+        cells_size = len(nodes_block_id)
         self.nodes_locked = [False] * cells_size
         self.nodes_gain = [0] * cells_size
-        self.nodes_block_id = [0] * cells_size
+        self.nodes_block_id = nodes_block_id
 
         self.best_partition = None
         self.cutsize = None

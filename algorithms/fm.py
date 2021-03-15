@@ -7,17 +7,7 @@ from model.data import Data
 
 
 def partition(circuit: Circuit, app=None):
-    data = init_data(circuit)
-
-    init_partition(circuit, data)
-    update_distribution(circuit, data)
-    calculate_gains(circuit, data)
-
-    data.cutsize = calculate_cutsize(circuit, data)
-    logging.info("initial cutsize = {}".format(data.cutsize))
-
-    data.store_best_cut()  # intialize best partition, mincut and prev mincut
-    data.prev_mincut = data.mincut = data.cutsize
+    data = init_partition(circuit)
 
     if app is not None:
         app.update_canvas(data)
@@ -26,7 +16,7 @@ def partition(circuit: Circuit, app=None):
         KL_inner(circuit, data)
 
 
-def KL_inner(circuit: Circuit, data, app=None):
+def KL_inner(circuit: Circuit, data, app=None, genetic=False):
     max_gain_node = get_max_gain_node(data)
     move_node_another_block(max_gain_node, data)
     data.update_cutsize_by_gain(max_gain_node)
@@ -34,22 +24,23 @@ def KL_inner(circuit: Circuit, data, app=None):
     if data.cutsize < data.mincut:  # if cutsize is the minimum for this pass, save partition
         data.store_best_cut()
 
-    data.print_blocks_size()
+    # data.print_blocks_size()
 
     if app is not None:
+        # if not genetic:
         app.update_canvas(data)
         if data.has_unlocked_nodes():
-            app.root.after(1, KL_inner, circuit, data, app)
+            app.root.after(1, KL_inner, circuit, data, app, genetic)
         else:
-            app.root.after(1000, KL_reset, circuit, data, app)
+            app.root.after(1000, KL_reset, circuit, data, app, genetic)
     else:
         if data.has_unlocked_nodes():
-            KL_inner(circuit, data)
+            KL_inner(circuit, data, app, genetic)
         else:
-            KL_reset(circuit, data)
+            KL_reset(circuit, data, app, genetic)
 
 
-def KL_reset(circuit: Circuit, data, app=None):
+def KL_reset(circuit: Circuit, data, app=None, genetic=False):
     data.restore_best_cut()  # restore block data structures
 
     update_distribution(circuit, data)
@@ -57,10 +48,12 @@ def KL_reset(circuit: Circuit, data, app=None):
 
     data.cutsize = data.mincut
 
+    if genetic:
+        return
+
     logging.info(
         "iteration {}: best min cut seen = {}".format(data.iteration, data.cutsize)
     )
-
     if app is not None:
         app.update_canvas(data)
 
@@ -73,20 +66,28 @@ def KL_reset(circuit: Circuit, data, app=None):
             app.root.after(1000, KL_inner, circuit, data, app)
 
 
-def init_data(circuit):
+def init_partition(circuit, block_ids=None):
     pmax = get_pmax(circuit)
     nets_size = circuit.get_nets_size()
-    cells_size = circuit.get_cells_size()
-    return Data(pmax, nets_size, cells_size)
-
-
-def init_partition(circuit, data):
     n = circuit.get_cells_size()
-    random_cids = random.sample(range(n), n)
 
-    for i, cid in enumerate(random_cids):
-        cell = circuit.cells[cid]
-        data.set_node_block_id(cell, i % 2)
+    if block_ids is None:
+        random_cids = random.sample(range(n), n)
+        block_ids = []
+        for i, cid in enumerate(random_cids):
+            block_ids.append(cid % 2)
+
+    data = Data(pmax, nets_size, block_ids)
+    update_distribution(circuit, data)
+    calculate_gains(circuit, data)
+
+    data.cutsize = calculate_cutsize(circuit, data)
+    print("initial cutsize = {}".format(data.cutsize))
+
+    data.store_best_cut()  # intialize best partition, mincut and prev mincut
+    data.prev_mincut = data.mincut = data.cutsize
+
+    return data
 
 
 def get_max_gain_node(data):

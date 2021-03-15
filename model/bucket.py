@@ -33,11 +33,8 @@ class Bucket:
 
     def __update_max_gain(self):
         """Update max gain if removing last node from the max gain bucket."""
-        while not self.__bucket_list[self.__max_gain]:
+        while (self.__max_gain > -self.__pmax) and (not self.__bucket_list[self.__max_gain]):
             self.__max_gain -= 1
-            # make sure index does not go out of range
-            if self.__max_gain == -self.__pmax:
-                break
 
     def remove_node(self, cell, data):
         """Remove a node from the Bucket List."""
