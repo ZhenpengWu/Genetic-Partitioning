@@ -6,17 +6,17 @@ from model.circuit import Circuit
 from model.data import Data
 
 
-def partition(circuit: Circuit, app=None):
+def kl(circuit: Circuit, app=None):
     data = init_partition(circuit)
 
     if app is not None:
         app.update_canvas(data)
-        app.root.after(100, KL_inner, circuit, data, app)
+        app.root.after(100, kl_inner, circuit, data, app)
     else:
-        KL_inner(circuit, data)
+        kl_inner(circuit, data)
 
 
-def KL_inner(circuit: Circuit, data, app=None, genetic=False):
+def kl_inner(circuit: Circuit, data, app=None, genetic=False):
     max_gain_node = get_max_gain_node(data)
     move_node_another_block(max_gain_node, data)
     data.update_cutsize_by_gain(max_gain_node)
@@ -24,23 +24,22 @@ def KL_inner(circuit: Circuit, data, app=None, genetic=False):
     if data.cutsize < data.mincut:  # if cutsize is the minimum for this pass, save partition
         data.store_best_cut()
 
-    # data.print_blocks_size()
+    data.print_blocks_size()
 
     if app is not None:
-        # if not genetic:
         app.update_canvas(data)
         if data.has_unlocked_nodes():
-            app.root.after(1, KL_inner, circuit, data, app, genetic)
+            app.root.after(1, kl_inner, circuit, data, app, genetic)
         else:
-            app.root.after(1000, KL_reset, circuit, data, app, genetic)
+            app.root.after(1000, kl_reset, circuit, data, app, genetic)
     else:
         if data.has_unlocked_nodes():
-            KL_inner(circuit, data, app, genetic)
+            kl_inner(circuit, data, app, genetic)
         else:
-            KL_reset(circuit, data, app, genetic)
+            kl_reset(circuit, data, app, genetic)
 
 
-def KL_reset(circuit: Circuit, data, app=None, genetic=False):
+def kl_reset(circuit: Circuit, data, app=None, genetic=False):
     data.restore_best_cut()  # restore block data structures
 
     update_distribution(circuit, data)
@@ -52,18 +51,20 @@ def KL_reset(circuit: Circuit, data, app=None, genetic=False):
         return
 
     logging.info(
-        "iteration {}: best min cut seen = {}".format(data.iteration, data.cutsize)
+        "iteration {}: best mincut = {}".format(data.iteration, data.cutsize)
     )
+
+    data.iteration += 1
     if app is not None:
         app.update_canvas(data)
 
     # continue for up to 6 iterations or until mincut stops improving
-    if data.iteration < 6 and data.mincut != data.prev_mincut:
-        data.iteration += 1
+    if data.iteration <= 6 and data.mincut != data.prev_mincut:
         data.prev_mincut = data.mincut
         if app is not None:
-            app.update_iteration(data.iteration)
-            app.root.after(1000, KL_inner, circuit, data, app)
+            app.root.after(1000, kl_inner, circuit, data, app)
+    elif app is not None:
+        app.update_partition_button(True)
 
 
 def init_partition(circuit, block_ids=None):
@@ -82,7 +83,7 @@ def init_partition(circuit, block_ids=None):
     calculate_gains(circuit, data)
 
     data.cutsize = calculate_cutsize(circuit, data)
-    print("initial cutsize = {}".format(data.cutsize))
+    logging.info("initial cutsize = {}".format(data.cutsize))
 
     data.store_best_cut()  # intialize best partition, mincut and prev mincut
     data.prev_mincut = data.mincut = data.cutsize

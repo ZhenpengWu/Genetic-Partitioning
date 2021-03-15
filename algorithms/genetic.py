@@ -1,21 +1,22 @@
 import bisect
+import logging
 import random
 
-from algorithms.fm import init_partition, KL_inner
+from algorithms.kl import init_partition, kl_inner
 from model.circuit import Circuit
 
 
-def partition(circuit: Circuit, app=None):
+def genetic(circuit: Circuit, app=None):
     # Step 1: come up a random population
     population = random_population(circuit)
 
     if app is not None:
-        app.root.after(100, inner, circuit, population, app)
+        app.root.after(100, genetic_inner, circuit, population, app)
     else:
-        inner(circuit, population, app)
+        genetic_inner(circuit, population, app)
 
 
-def inner(circuit, population, app=None):
+def genetic_inner(circuit, population, app=None):
     parents, fitness_list = select_parent(population)
     offsprings = crossover(parents)
     for offspring in offsprings:
@@ -23,16 +24,15 @@ def inner(circuit, population, app=None):
     replace_with_offsprings(circuit, population, fitness_list, offsprings)
 
     stop, best = stopping_criterion(population)
-    print("mincut:", best.cutsize)
 
     if app is not None:
         app.update_canvas(best)
         if not stop:
-            app.root.after(100, inner, circuit, population, app)
+            app.root.after(100, genetic_inner, circuit, population, app)
         else:
-            print("stopped")
+            app.update_partition_button(True)
     elif not stop:
-        inner(circuit, population)
+        genetic_inner(circuit, population)
 
 
 def stopping_criterion(population):
@@ -44,6 +44,7 @@ def stopping_criterion(population):
             best = chromeosome
         if mincut == chromeosome.mincut:
             count += 1
+    logging.info("mincut: {} | rate: {:.2%}".format(best.mincut, count / 50))
     return (count / 50) >= 0.8, best
 
 
@@ -51,7 +52,7 @@ def replace_with_offsprings(circuit, population, fitness_list, offsprings):
     victims = find_victims(fitness_list)
     for i, v in enumerate(victims):
         data = init_partition(circuit, offsprings[i])
-        KL_inner(circuit, data, None, True)
+        kl_inner(circuit, data, None, True)
         population[v] = data
 
 

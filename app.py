@@ -4,8 +4,9 @@ from math import sqrt, ceil
 from tkinter import ALL, Canvas, StringVar, Tk, E, N, S, W, filedialog, DISABLED, NORMAL
 from tkinter.ttk import Button, Frame, Label
 
+from algorithms.genetic import genetic
+from algorithms.kl import kl
 from model.circuit import Circuit
-from algorithms.genetic import partition
 from util.logging import init_logging
 
 
@@ -28,7 +29,7 @@ class App:
     def __test_benchmark(self, file):
         logging.info("opened benchmark: {}".format(file))
         self.circuit.parse_file(file)
-        partition(self.circuit)
+        genetic(self.circuit)
 
     def __open_benchmark(self):
         """
@@ -47,7 +48,7 @@ class App:
         self.__load_benchmark(filename)
 
         self.__init_canvas()
-        self.root.nametowidget("btm.partition")["state"] = NORMAL
+        self.update_partition_button(True)
 
     def __load_benchmark(self, filename):
         """
@@ -64,12 +65,19 @@ class App:
         self.__update_info("info.cells", self.circuit.get_cells_size())
         self.__update_info("info.nets", self.circuit.get_nets_size())
 
-    def __partitioning(self):
+    def __partitioning(self, algorihtm):
         """
         called when "partition" is pressed, execture the branch and bound partitioning
         """
-        partition(self.circuit, self)
-        self.root.nametowidget("btm.partition")["state"] = DISABLED
+        if algorihtm == "kl":
+            kl(self.circuit, self)
+        else:
+            genetic(self.circuit, self)
+        self.update_partition_button(False)
+
+    def update_partition_button(self, enable):
+        self.root.nametowidget("btm.kl")["state"] = NORMAL if enable else DISABLED
+        self.root.nametowidget("btm.genetic")["state"] = NORMAL if enable else DISABLED
 
     def __init_gui(self):
         """
@@ -95,19 +103,28 @@ class App:
 
         # add open button to the bottom frame
         open_button = Button(
-            btm_frame, text="open", command=self.__open_benchmark, name="open"
+            btm_frame, text="Open", command=self.__open_benchmark, name="open"
         )
         open_button.grid(column=0, row=0, padx=5, pady=5)
 
         # add partition button to the bottom frame
-        partition_button = Button(
+        kl_button = Button(
             btm_frame,
-            text="partition",
-            command=self.__partitioning,
-            name="partition",
+            text="Kernighan-Lin",
+            command=lambda: self.__partitioning("kl"),
+            name="kl",
         )
-        partition_button.grid(column=2, row=0, padx=5, pady=5)
-        partition_button["state"] = DISABLED
+        kl_button.grid(column=1, row=0, padx=5, pady=5)
+        kl_button["state"] = DISABLED
+
+        genetic_button = Button(
+            btm_frame,
+            text="Genetic",
+            command=lambda: self.__partitioning("genetic"),
+            name="genetic",
+        )
+        genetic_button.grid(column=2, row=0, padx=5, pady=5)
+        genetic_button["state"] = DISABLED
 
         # set up the info frame
         info_frame = Frame(self.root, name="info")
@@ -152,6 +169,7 @@ class App:
         self.__update_cells(canvas, data)
         self.__update_nets(canvas)
         self.__update_cutsize(data.cutsize)
+        self.__update_iteration(data.iteration)
 
     def __update_cells(self, canvas, data):
         x = [self.size // 2, self.cw // 2 + self.size // 2]
@@ -175,7 +193,7 @@ class App:
     def __update_cutsize(self, cutsize):
         self.__update_info("info.cutsize", cutsize)
 
-    def update_iteration(self, iteration):
+    def __update_iteration(self, iteration):
         self.__update_info("info.iteration", iteration)
 
     def __update_info(self, name: str, val):

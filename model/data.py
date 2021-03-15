@@ -1,3 +1,5 @@
+import logging
+
 from model.block import Block
 
 
@@ -105,4 +107,4 @@ class Data:
         return self.blocks[block_id].pop_max_gain_node()
 
     def print_blocks_size(self):
-        print(self.blocks[0].size(), self.blocks[1].size())
+        logging.debug("block 0: {}, block 1: {}".format(self.blocks[0].size(), self.blocks[1].size()))
