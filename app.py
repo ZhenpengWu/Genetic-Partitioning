@@ -57,10 +57,6 @@ class App:
             genetic(self.circuit, self)
         self.update_partition_button(False)
 
-    def update_partition_button(self, enable):
-        self.root.nametowidget("btm.kl")["state"] = NORMAL if enable else DISABLED
-        self.root.nametowidget("btm.genetic")["state"] = NORMAL if enable else DISABLED
-
     def __init_gui(self):
         """
         initialize the GUI
@@ -184,3 +180,7 @@ class App:
         info = self.root.nametowidget(name)
         varname = info.cget("textvariable")
         info.setvar(varname, val)
+
+    def update_partition_button(self, enable):
+        self.root.nametowidget("btm.kl")["state"] = NORMAL if enable else DISABLED
+        self.root.nametowidget("btm.genetic")["state"] = NORMAL if enable else DISABLED

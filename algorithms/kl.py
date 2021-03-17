@@ -74,9 +74,7 @@ def init_partition(circuit, block_ids=None):
 
     if block_ids is None:
         random_cids = random.sample(range(n), n)
-        block_ids = []
-        for i, cid in enumerate(random_cids):
-            block_ids.append(cid % 2)
+        block_ids = [cid % 2 for i, cid in enumerate(random_cids)]
 
     data = Data(pmax, nets_size, block_ids)
     update_distribution(circuit, data)
