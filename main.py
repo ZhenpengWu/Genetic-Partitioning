@@ -17,18 +17,6 @@ if __name__ == "__main__":
         action="store_true",
     )
 
-    parser.add_argument(
-        "-g",
-        "--no-gui",
-        help="""
-        disable graphical user interface (GUI), and
-        automatically enable if no other arguments specified
-        """,
-        action="store_true",
-    )
-
-    parser.add_argument("-i", "--infile", help="test input file")
-
     args = parser.parse_args()
 
     sys.setrecursionlimit(1500)

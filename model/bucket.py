@@ -22,14 +22,12 @@ class Bucket:
 
     def add_node(self, cell, data):
         """Add a node with initial gain to the Bucket List."""
-        # add node
         gain = data.get_node_gain(cell)
         self.__bucket_list[gain][cell.cell_id] = cell
 
         self.__count += 1
         # update max gain pointer
-        if gain > self.__max_gain:
-            self.__max_gain = gain
+        self.__max_gain = max(gain, self.__max_gain)
 
     def __update_max_gain(self):
         """Update max gain if removing last node from the max gain bucket."""
@@ -46,7 +44,7 @@ class Bucket:
 
     def pop(self):
         """Return a node with highest gain and remove it."""
-        (ID, node) = self.__bucket_list[self.__max_gain].popitem()
+        (_, node) = self.__bucket_list[self.__max_gain].popitem()
 
         self.__update_max_gain()
         self.__count -= 1

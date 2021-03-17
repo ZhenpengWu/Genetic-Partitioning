@@ -7,6 +7,7 @@ from tkinter.ttk import Button, Frame, Label
 from algorithms.genetic import genetic
 from algorithms.kl import kl
 from model.circuit import Circuit
+from util.colors import locked_color
 from util.logging import init_logging
 
 
@@ -15,21 +16,9 @@ class App:
         init_logging(args.verbose)
 
         self.circuit = Circuit()
-
-        # if no_gui and infile are set, test benchmark directly without gui
-        if args.no_gui and args.infile:
-            self.__test_benchmark(args.infile)
-        else:  # otherwise, display GUI
-            self.root = Tk()
-            self.__init_gui()
-            if args.infile:
-                self.__load_benchmark(args.infile)
-            self.root.mainloop()
-
-    def __test_benchmark(self, file):
-        logging.info("opened benchmark: {}".format(file))
-        self.circuit.parse_file(file)
-        genetic(self.circuit)
+        self.root = Tk()
+        self.__init_gui()
+        self.root.mainloop()
 
     def __open_benchmark(self):
         """
@@ -45,16 +34,6 @@ class App:
         if not filename:
             return
 
-        self.__load_benchmark(filename)
-
-        self.__init_canvas()
-        self.update_partition_button(True)
-
-    def __load_benchmark(self, filename):
-        """
-        load the input file, initialize the canvas, update related info in the info frame
-        :param filename: the input file
-        """
         logging.info("opened benchmark: {}".format(filename))
         self.circuit.parse_file(filename)
 
@@ -64,6 +43,9 @@ class App:
         self.__update_info("info.benchmark", self.circuit.benchmark)
         self.__update_info("info.cells", self.circuit.get_cells_size())
         self.__update_info("info.nets", self.circuit.get_nets_size())
+
+        self.__init_canvas()
+        self.update_partition_button(True)
 
     def __partitioning(self, algorihtm):
         """
@@ -168,19 +150,27 @@ class App:
 
         self.__update_cells(canvas, data)
         self.__update_nets(canvas)
-        self.__update_cutsize(data.cutsize)
-        self.__update_iteration(data.iteration)
+        self.__update_info("info.cutsize", data.cutsize)
+        self.__update_info("info.iteration", data.iteration)
 
     def __update_cells(self, canvas, data):
         x = [self.size // 2, self.cw // 2 + self.size // 2]
         y = [self.size // 2, self.size // 2]
         node_count = [0, 0]
         for cell in self.circuit.cells:
-            cell.update(canvas, x, y, node_count, data, self)
+            block_id = data.get_node_block_id(cell)
+            x1, y1 = x[block_id], y[block_id]
+            x2, y2 = x1 + self.size, y1 + self.size
+            color = locked_color[block_id] if data.is_node_locked(cell) else "white"
+            cell.update(canvas, x1, y1, x2, y2, color)
+            node_count[block_id] += 1
+            next_col = (node_count[block_id] % self.rows) == 0
+
+            x[block_id] = x2 + self.node_pad if next_col else x1
+            y[block_id] = self.size // 2 if next_col else y2 + self.node_pad
 
     def __update_nets(self, canvas):
         """Draw nets in canvas."""
-        # Draw rats nest of nets
         canvas.delete("netlist")
 
         for net in self.circuit.nets:
@@ -190,13 +180,7 @@ class App:
                 x2, y2 = sink.center_coords(canvas)
                 canvas.create_line(x1, y1, x2, y2, tags="netlist", fill=net.color)
 
-    def __update_cutsize(self, cutsize):
-        self.__update_info("info.cutsize", cutsize)
-
-    def __update_iteration(self, iteration):
-        self.__update_info("info.iteration", iteration)
-
     def __update_info(self, name: str, val):
-        num_cells = self.root.nametowidget(name)
-        varname = num_cells.cget("textvariable")
-        num_cells.setvar(varname, val)
+        info = self.root.nametowidget(name)
+        varname = info.cget("textvariable")
+        info.setvar(varname, val)
