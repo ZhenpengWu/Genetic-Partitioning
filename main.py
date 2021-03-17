@@ -6,7 +6,7 @@ from app import App
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="""
-    This is an implementation of a branch-and-bound based partitioning tool.
+    This is an implementation of a Genetic and Kernighan-Lin based partitioning tool.
     """
     )
 
