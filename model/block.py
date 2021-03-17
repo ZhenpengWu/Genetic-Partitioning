@@ -2,7 +2,6 @@ from model.bucket import Bucket
 
 
 class Block:
-
     def __init__(self, pmax):
         self.__node_ids = set()
         self.__bucket = Bucket(pmax)

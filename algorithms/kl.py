@@ -21,8 +21,8 @@ def kl_inner(circuit: Circuit, data, app=None, genetic=False):
     move_node_another_block(max_gain_node, data)
     data.update_cutsize_by_gain(max_gain_node)
 
-    if data.cutsize < data.mincut:  # if cutsize is the minimum for this pass, save partition
-        data.store_best_cut()
+    if data.cutsize < data.mincut:
+        data.store_best_cut()  # if cutsize is the minimum for this pass, save partition
 
     data.print_blocks_size()
 
@@ -50,9 +50,7 @@ def kl_reset(circuit: Circuit, data, app=None, genetic=False):
     if genetic:
         return
 
-    logging.info(
-        "iteration {}: best mincut = {}".format(data.iteration, data.cutsize)
-    )
+    logging.info("iteration {}: best mincut = {}".format(data.iteration, data.cutsize))
 
     if app is not None:
         app.update_canvas(data)
@@ -74,9 +72,7 @@ def init_partition(circuit, block_ids=None):
 
     if block_ids is None:
         random_cids = random.sample(range(n), n)
-        block_ids = []
-        for i, cid in enumerate(random_cids):
-            block_ids.append(cid % 2)
+        block_ids = [cid % 2 for i, cid in enumerate(random_cids)]
 
     data = Data(pmax, nets_size, block_ids)
     update_distribution(circuit, data)
@@ -170,7 +166,9 @@ def calculate_cutsize(circuit, data):
 
 
 def is_cut(net, data):
-    return (data.get_net_distribution(net, 0) > 0) and (data.get_net_distribution(net, 1) > 0)
+    return (data.get_net_distribution(net, 0) > 0) and (
+        data.get_net_distribution(net, 1) > 0
+    )
 
 
 def get_pmax(circuit):

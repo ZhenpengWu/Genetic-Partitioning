@@ -1,14 +1,9 @@
-from util.colors import locked_color
-
-
 class Cell:
     def __init__(self, cell_id: int) -> None:
         self.cell_id: int = cell_id
         self.nets = []
         self.text_id = None
         self.rect_id = None
-        self.x = None
-        self.y = None
 
     def __str__(self):
         return str(self.cell_id)
@@ -19,23 +14,13 @@ class Cell:
     def add_net(self, net) -> None:
         self.nets.append(net)
 
-    def update(self, canvas, x, y, node_count, data, app):
-        block_id = data.get_node_block_id(self)
-        x1, y1 = x[block_id], y[block_id]
-        x2, y2 = x1 + app.size, y1 + app.size
-        color = locked_color[block_id] if data.is_node_locked(self) else "white"
+    def update(self, canvas, x1, y1, x2, y2, color=None):
         if self.rect_id is None:
             self.rect_id = canvas.create_rectangle(x1, y1, x2, y2, fill=color)
         else:
             canvas.coords(self.rect_id, x1, y1, x2, y2)
             canvas.itemconfigure(self.rect_id, fill=color)
         self.__set_text(canvas)
-
-        node_count[block_id] += 1
-        next_col = (node_count[block_id] % app.rows) == 0
-
-        x[block_id] = x2 + app.node_pad if next_col else x1
-        y[block_id] = app.size // 2 if next_col else y2 + app.node_pad
 
     def center_coords(self, canvas):
         """
