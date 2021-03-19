@@ -11,7 +11,6 @@ class Block:
         self.__bucket.reset()
 
     def size(self):
-        """Return number of nodes in block."""
         return len(self.__node_ids)
 
     def add_unlocked_node(self, cell, data):

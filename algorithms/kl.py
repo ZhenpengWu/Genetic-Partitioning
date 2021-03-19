@@ -32,11 +32,10 @@ def kl_inner(circuit: Circuit, data, app=None, genetic=False):
             app.root.after(1, kl_inner, circuit, data, app, genetic)
         else:
             app.root.after(1000, kl_reset, circuit, data, app, genetic)
+    elif data.has_unlocked_nodes():
+        kl_inner(circuit, data, app, genetic)
     else:
-        if data.has_unlocked_nodes():
-            kl_inner(circuit, data, app, genetic)
-        else:
-            kl_reset(circuit, data, app, genetic)
+        kl_reset(circuit, data, app, genetic)
 
 
 def kl_reset(circuit: Circuit, data, app=None, genetic=False):
@@ -167,9 +166,9 @@ def calculate_cutsize(circuit, data):
 
 def is_cut(net, data):
     return (data.get_net_distribution(net, 0) > 0) and (
-        data.get_net_distribution(net, 1) > 0
+            data.get_net_distribution(net, 1) > 0
     )
 
 
 def get_pmax(circuit):
-    return reduce(lambda a, b: max(a, b.get_net_size()), circuit.cells, 0)
+    return reduce(lambda a, b: max(a, b.get_nets_size()), circuit.cells, 0)
