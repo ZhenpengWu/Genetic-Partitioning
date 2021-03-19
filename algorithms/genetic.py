@@ -3,13 +3,15 @@ import logging
 import random
 from collections import Counter
 from functools import reduce
+from typing import List
 
-from algorithms.kl import init_partition, kl_inner
+from algorithms.kl import init_partition, kl_inner_loop
 from model.circuit import Circuit
+from model.data import Data
 
 
 def genetic(circuit: Circuit, app=None):
-    # Step 1: come up a random population
+    # come up a random population
     population = random_population(circuit)
 
     if app is not None:
@@ -51,7 +53,7 @@ def stopping_criterion(population):
 def local_imporvement(circuit, offsprings):
     res = [init_partition(circuit, offspring) for offspring in offsprings]
     for data in res:
-        kl_inner(circuit, data, None, True)
+        kl_inner_loop(circuit, data, None, True)
     return res
 
 
@@ -91,7 +93,10 @@ def find_inferior(fitness_list, used):
     return min1
 
 
-def random_population(circuit: Circuit, k=50):
+def random_population(circuit: Circuit, k=50) -> List[Data]:
+    """
+    initialize population as k chromosomes, each representing a potential solution
+    """
     popultation = [init_partition(circuit) for _ in range(k)]
     return popultation
 

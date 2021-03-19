@@ -2,8 +2,10 @@ import logging
 import random
 from functools import reduce
 
+from model.cell import Cell
 from model.circuit import Circuit
 from model.data import Data
+from model.net import Net
 
 
 def kl(circuit: Circuit, app=None):
@@ -14,12 +16,12 @@ def kl(circuit: Circuit, app=None):
 
     if app is not None:
         app.update_canvas(data)
-        app.root.after(100, kl_inner, circuit, data, app)
+        app.root.after(100, kl_inner_loop, circuit, data, app)
     else:
-        kl_inner(circuit, data)
+        kl_inner_loop(circuit, data)
 
 
-def kl_inner(circuit: Circuit, data, app=None, genetic=False):
+def kl_inner_loop(circuit: Circuit, data: Data, app=None, genetic=False):
     """
     perform the inner loop of the Kernighan-Lin partition
     """
@@ -40,22 +42,28 @@ def kl_inner(circuit: Circuit, data, app=None, genetic=False):
 
     if app is not None:
         app.update_canvas(data)
-        # 
+        # inner loop stop until no unlocked nodes remains
         if data.has_unlocked_nodes():
-            app.root.after(1, kl_inner, circuit, data, app, genetic)
-        else:
-            app.root.after(1000, kl_reset, circuit, data, app, genetic)
+            app.root.after(1, kl_inner_loop, circuit, data, app, genetic)
+        else:  # ineer loop exit
+            app.root.after(1000, kl_inner_stop, circuit, data, app, genetic)
     elif data.has_unlocked_nodes():
-        kl_inner(circuit, data, app, genetic)
+        kl_inner_loop(circuit, data, app, genetic)
     else:
-        kl_reset(circuit, data, app, genetic)
+        kl_inner_stop(circuit, data, app, genetic)
 
 
-def kl_reset(circuit: Circuit, data, app=None, genetic=False):
+def kl_inner_stop(circuit: Circuit, data: Data, app=None, genetic=False):
+    """
+    it is the end of the current pass, restore the best cut of this pass;
+    terminates the outer loop if mincut doesn't improve or it reaches 6 iterations
+    """
     data.restore_best_cut()  # restore block data structures
 
+    # update the distribution for the restored best cut
     update_distribution(circuit, data)
-    calculate_gains(circuit, data)  # calculate initial gains
+    # update the gains for the restored best cut
+    calculate_gains(circuit, data)
 
     if genetic:
         return
@@ -70,7 +78,7 @@ def kl_reset(circuit: Circuit, data, app=None, genetic=False):
     if data.iteration <= 6 and data.mincut != data.prev_mincut:
         data.prev_mincut = data.mincut
         if app is not None:
-            app.root.after(1000, kl_inner, circuit, data, app)
+            app.root.after(1000, kl_inner_loop, circuit, data, app)
     elif app is not None:
         app.update_partition_button(True)
 
@@ -107,7 +115,7 @@ def init_partition(circuit, block_ids=None) -> Data:
     return data
 
 
-def select_max_gain_node(data):
+def select_max_gain_node(data: Data):
     """
     choose max gain node from blocks, and maintain the balance constraint
     """
@@ -124,7 +132,7 @@ def select_max_gain_node(data):
         return data.pop_block_max_gain(random.choice([0, 1]))
 
 
-def move_node_another_block(cell, data):
+def move_node_another_block(cell: Cell, data: Data):
     """
     move the max gain node to anothe block
     """
@@ -162,7 +170,7 @@ def move_node_another_block(cell, data):
     data.update_cutsize_by_gain(cell)
 
 
-def update_distribution(circuit, data):
+def update_distribution(circuit: Circuit, data: Data):
     """
     update the distribution for each net
     """
@@ -173,7 +181,7 @@ def update_distribution(circuit, data):
             data.inc_net_distribution(net, block_id)
 
 
-def calculate_gains(circuit, data):
+def calculate_gains(circuit: Circuit, data: Data):
     """
     calculate the gain for each node
     """
@@ -189,14 +197,14 @@ def calculate_gains(circuit, data):
         data.unlock_node(cell, F)
 
 
-def calculate_cutsize(circuit, data):
+def calculate_cutsize(circuit: Circuit, data: Data):
     """
     :return: the cutsize fo the current partition
     """
     return reduce(lambda a, b: a + is_cut(b, data), circuit.nets, 0)
 
 
-def is_cut(net, data) -> bool:
+def is_cut(net: Net, data: Data) -> bool:
     """
     :return: True if the given net is a cut, otherwiese False
     """
@@ -205,7 +213,7 @@ def is_cut(net, data) -> bool:
     )
 
 
-def get_pmax(circuit) -> int:
+def get_pmax(circuit: Circuit) -> int:
     """
     :return: pmax, which is the maximum net size
     """
