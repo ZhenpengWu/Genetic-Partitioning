@@ -19,7 +19,6 @@ def kl(circuit: Circuit, app=None):
 def kl_inner(circuit: Circuit, data, app=None, genetic=False):
     max_gain_node = get_max_gain_node(data)
     move_node_another_block(max_gain_node, data)
-    data.update_cutsize_by_gain(max_gain_node)
 
     if data.cutsize < data.mincut:
         data.store_best_cut()  # if cutsize is the minimum for this pass, save partition
@@ -43,8 +42,6 @@ def kl_reset(circuit: Circuit, data, app=None, genetic=False):
 
     update_distribution(circuit, data)
     calculate_gains(circuit, data)  # calculate initial gains
-
-    data.cutsize = data.mincut
 
     if genetic:
         return
@@ -111,9 +108,7 @@ def move_node_another_block(cell, data):
     F = data.get_node_block_id(cell)  # from block id
     T = (F + 1) % 2  # to block id
 
-    data.lock_node(cell)
-    data.set_node_block_id(cell, T)
-    data.add_locked_node(T, cell)
+    data.lock_node(cell, T)
 
     for net in cell.nets:
         if data.get_net_distribution(net, T) == 0:
@@ -137,6 +132,8 @@ def move_node_another_block(cell, data):
                 if data.is_node_unlocked(nei) and data.get_node_block_id(nei) == F:
                     data.update_node_gain(nei, 1)
 
+    data.update_cutsize_by_gain(cell)
+
 
 def update_distribution(circuit, data):
     for net in circuit.nets:
@@ -148,7 +145,6 @@ def update_distribution(circuit, data):
 
 def calculate_gains(circuit, data):
     for cell in circuit.cells:
-        data.unlock_node(cell)
         data.reset_node_gain(cell)
         F = data.get_node_block_id(cell)  # from block id
         T = (F + 1) % 2  # to block id
@@ -157,7 +153,7 @@ def calculate_gains(circuit, data):
                 data.inc_node_gain(cell)
             if data.get_net_distribution(net, T) == 0:
                 data.dec_node_gain(cell)
-        data.add_unlocked_node(F, cell)
+        data.unlock_node(cell, F)
 
 
 def calculate_cutsize(circuit, data):

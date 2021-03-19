@@ -119,7 +119,7 @@ def calculate_fitness(population):
         worst_cutsize = max(chromeosome.mincut, worst_cutsize)
         best_cutsize = min(chromeosome.mincut, best_cutsize)
         fitness = (worst_cutsize - chromeosome.mincut) + (
-            worst_cutsize - best_cutsize
+                worst_cutsize - best_cutsize
         ) // 3
         fitness_list.append(fitness)
         total_fitness += fitness

@@ -14,13 +14,13 @@ class Block:
 
     def size(self) -> int:
         """
-        :rtype: the number of nodes in the block.
+        :return: the number of nodes in the block
         """
         return len(self.__node_ids)
 
     def add_unlocked_node(self, cell, data):
         """
-        add specified unlocked node to the block.
+        add specified unlocked node to the block
         """
         if data.is_node_locked(cell):
             raise ValueError
@@ -32,7 +32,7 @@ class Block:
 
     def add_locked_node(self, cell, data):
         """
-        add specified locked noode to the block.
+        add specified locked noode to the block
         """
         if data.is_node_unlocked(cell):
             raise ValueError
@@ -40,7 +40,7 @@ class Block:
 
     def remove_node(self, cell, data):
         """
-        remove specified node from the block.
+        remove specified node from the block
         """
         gain = data.get_node_gain(cell)
         del self.__buckets[gain][cell.cell_id]
@@ -48,13 +48,13 @@ class Block:
 
     def has_unlocked_nodes(self) -> bool:
         """
-        :return: True if there are unlocked nodes, otherwise False.
+        :return: True if there are unlocked nodes, otherwise False
         """
         return self.__count != 0
 
     def pop_max_gain_node(self):
         """
-        :return: node with the max gain in the block.
+        :return: node with the max gain in the block
         """
         (_, node) = self.__buckets[self.__max_gain].popitem()
         self.__remove_node(node)
@@ -81,4 +81,7 @@ class Block:
         return self.__max_gain
 
     def copy_set(self):
+        """
+        :return: copy of node list in the block
+        """
         return self.__node_ids.copy()
