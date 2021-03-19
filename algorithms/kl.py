@@ -10,7 +10,7 @@ from model.net import Net
 
 def kl(circuit: Circuit, app=None):
     """
-    perform the Kernighan-Lin partition in the given circuit
+    perform the Kernighan-Lin Partition algorithm in the given circuit
     """
     data = init_partition(circuit)
 
@@ -23,7 +23,7 @@ def kl(circuit: Circuit, app=None):
 
 def kl_inner_loop(circuit: Circuit, data: Data, app=None, genetic=False):
     """
-    perform the inner loop of the Kernighan-Lin partition
+    perform the inner loop of the Kernighan-Lin Partition algorithm
     """
     # select the max gain node from blocks
     max_gain_node = select_max_gain_node(data)
