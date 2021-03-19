@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 from model.cell import Cell
 from model.net import Net
@@ -7,15 +6,14 @@ from util.colors import random_colors
 
 
 class Circuit:
-    def __init__(self) -> None:
-        self.cells: List[Cell] = []
-        self.nets: List[Net] = []
+    def __init__(self):
+        self.cells = []
+        self.nets = []
         self.benchmark = None
 
-    def parse_file(self, file) -> None:
+    def parse_file(self, file):
         """
         parse the input file
-        :param file: the input file
         """
         self.benchmark = os.path.basename(file)
 
@@ -47,21 +45,25 @@ class Circuit:
         """
         create a net, based on the data, assign an unique color
         then add to netlist
-        :param color: unique color for the net
-        :param s: string contains data of a net
         """
         data = s.strip().split()
 
-        net: Net = Net(len(self.nets), color)
+        net = Net(len(self.nets), color)
         for i in data[1:]:
-            cell: Cell = self.cells[int(i)]
+            cell = self.cells[int(i)]
             cell.add_net(net)
             net.add_cell(cell)
 
         self.nets.append(net)
 
     def get_nets_size(self) -> int:
+        """
+        :return: the number of nets in this circuit
+        """
         return len(self.nets)
 
     def get_cells_size(self) -> int:
+        """
+        :return: the number of cells in this circuit
+        """
         return len(self.cells)
