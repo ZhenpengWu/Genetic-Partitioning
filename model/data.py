@@ -58,8 +58,8 @@ class Data:
         :return: True if there are unlocked nodes remains in the blocks
         """
         return (
-                self.__blocks[0].has_unlocked_nodes()
-                or self.__blocks[1].has_unlocked_nodes()
+            self.__blocks[0].has_unlocked_nodes()
+            or self.__blocks[1].has_unlocked_nodes()
         )
 
     def is_node_locked(self, cell) -> bool:

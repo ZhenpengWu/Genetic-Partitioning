@@ -31,13 +31,17 @@ def genetic_loop(circuit, population, app=None):
     parents, fitness_list = select_parents(population)
     # combine parents to produce 2 offspring
     offspring = crossover(population, parents)
+    # perform mutation operation on offspring
     mutation(offspring)
+    # perfrom local improvement on offspring
     offspring = local_improvement(circuit, offspring)
+    # replace some members in population with offspring
     replace(population, fitness_list, parents, offspring)
-
+    # check the stopping criterion
     stop, best = stopping_criterion(population)
 
     if app is not None:
+        # render the best chromeosome among the population
         app.update_canvas(best)
         if not stop:
             app.root.after(100, genetic_loop, circuit, population, app)
@@ -48,6 +52,10 @@ def genetic_loop(circuit, population, app=None):
 
 
 def stopping_criterion(population):
+    """
+    the genetic algorithm stopped when 80% of the population is
+    occupied by solution with the same quality
+    """
     best, freq = None, Counter()
     for chromeosome in population:
         if not best or chromeosome.mincut < best.mincut:
@@ -94,9 +102,7 @@ def fitness(chromeosome: Data, worst_cutsize, best_cutsize) -> int:
     """
     :return: fitness_i = (C_w - C_i) + (C_w - C_b) // 3
     """
-    return (worst_cutsize - chromeosome.mincut) + (
-            worst_cutsize - best_cutsize
-    ) // 3
+    return (worst_cutsize - chromeosome.mincut) + (worst_cutsize - best_cutsize) // 3
 
 
 def search_parent(search_list, F):
@@ -169,11 +175,10 @@ def local_improvement(circuit, offspring):
 
 def replace(population, fitness_list, parents_index, offspring):
     """
-    
-    :param population:
-    :param fitness_list:
-    :param parents_index:
-    :param offspring:
+    replace some members with offsping:
+        - if the offsping is better than one of the parents,
+            -  repace more similar parent with the offspring
+        - else, replace with the most inferior member of the population
     """
     parents = population[parents_index[0]], population[parents_index[1]]
     used = set()
@@ -205,7 +210,10 @@ def measure_distance(parent, child) -> int:
     return sum([parent_block_ids[i] != child_block_ids[i] for i in range(n)])
 
 
-def find_inferior(fitness_list, used):
+def find_inferior(fitness_list, used) -> int:
+    """
+    :return: the index of the most inferior member
+    """
     min1 = -1
     for i, v in enumerate(fitness_list):
         if (i not in used) and (min1 < -1 or v < fitness_list[min1]):
