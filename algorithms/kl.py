@@ -7,6 +7,9 @@ from model.data import Data
 
 
 def kl(circuit: Circuit, app=None):
+    """
+    perform the Kernighan-Lin partition in the given circuit
+    """
     data = init_partition(circuit)
 
     if app is not None:
@@ -17,16 +20,27 @@ def kl(circuit: Circuit, app=None):
 
 
 def kl_inner(circuit: Circuit, data, app=None, genetic=False):
-    max_gain_node = get_max_gain_node(data)
+    """
+    perform the inner loop of the Kernighan-Lin partition
+    """
+    # select the max gain node from blocks
+    max_gain_node = select_max_gain_node(data)
+
+    # move the max gain node to another block
+    #   - update the gain for each node
+    #   - update the nets distribution
+    #   - update the cutsize
     move_node_another_block(max_gain_node, data)
 
+    # if cutsize is the minimum for this pass, store the cut
     if data.cutsize < data.mincut:
-        data.store_best_cut()  # if cutsize is the minimum for this pass, save partition
+        data.store_best_cut()
 
     data.print_blocks_size()
 
     if app is not None:
         app.update_canvas(data)
+        # 
         if data.has_unlocked_nodes():
             app.root.after(1, kl_inner, circuit, data, app, genetic)
         else:
@@ -61,7 +75,12 @@ def kl_reset(circuit: Circuit, data, app=None, genetic=False):
         app.update_partition_button(True)
 
 
-def init_partition(circuit, block_ids=None):
+def init_partition(circuit, block_ids=None) -> Data:
+    """
+    randomly partition the nodes equally, if the block_ids
+    is not specified.
+    :return: data container for the current partition
+    """
     pmax = get_pmax(circuit)
     nets_size = circuit.get_nets_size()
     n = circuit.get_cells_size()
@@ -70,47 +89,53 @@ def init_partition(circuit, block_ids=None):
         random_cids = random.sample(range(n), n)
         block_ids = [cid % 2 for i, cid in enumerate(random_cids)]
 
+    # initialzie a data container for the current partition
     data = Data(pmax, nets_size, block_ids)
+    # update the nets distribution in the current partition
     update_distribution(circuit, data)
+    # update the gain for each node in the current partition
     calculate_gains(circuit, data)
-
+    # update the cutsize of the current partition
     data.cutsize = calculate_cutsize(circuit, data)
+
     logging.info("initial cutsize = {}".format(data.cutsize))
 
-    data.store_best_cut()  # intialize best partition, mincut and prev mincut
-    data.prev_mincut = data.mincut = data.cutsize
+    # intialize best partition, and prev mincut
+    data.store_best_cut()
+    data.prev_mincut = data.mincut
 
     return data
 
 
-def get_max_gain_node(data):
-    """Choose node to move based on gain and balance condition and return it."""
-    block0_size = data.get_block_size(0)
-    block1_size = data.get_block_size(1)
+def select_max_gain_node(data):
+    """
+    choose max gain node from blocks, and maintain the balance constraint
+    """
+    block0_size, block0_max_gain = data.get_block_size(0), data.peek_block_max_gain(0)
+    block1_size, block1_max_gain = data.get_block_size(1), data.peek_block_max_gain(1)
 
-    if block0_size > block1_size:
+    if block0_size > block1_size or (
+            block0_size == block1_size and block0_max_gain > block1_max_gain):
         return data.pop_block_max_gain(0)
-    elif block0_size < block1_size:
-        return data.pop_block_max_gain(1)
-
-    block0_max_gain = data.peek_block_max_gain(0)
-    block1_max_gain = data.peek_block_max_gain(1)
-
-    if block0_max_gain > block1_max_gain:
-        return data.pop_block_max_gain(0)
-    elif block0_max_gain < block1_max_gain:
+    elif block0_size < block1_size or (
+            block0_size == block1_size and block0_max_gain < block1_max_gain):
         return data.pop_block_max_gain(1)
     else:  # break tie
         return data.pop_block_max_gain(random.choice([0, 1]))
 
 
 def move_node_another_block(cell, data):
+    """
+    move the max gain node to anothe block
+    """
     F = data.get_node_block_id(cell)  # from block id
     T = (F + 1) % 2  # to block id
 
+    # lock the node
     data.lock_node(cell, T)
 
     for net in cell.nets:
+        # check critical nets before the move
         if data.get_net_distribution(net, T) == 0:
             for nei in net.cells:
                 if data.is_node_unlocked(nei):
@@ -120,9 +145,11 @@ def move_node_another_block(cell, data):
                 if data.is_node_unlocked(nei) and data.get_node_block_id(nei) == T:
                     data.update_node_gain(nei, -1)
 
+        # change the net distribution to reflect the move
         data.dec_net_distribution(net, F)
         data.inc_net_distribution(net, T)
 
+        # check the critical nets after the move
         if data.get_net_distribution(net, F) == 0:
             for nei in net.cells:
                 if data.is_node_unlocked(nei):
@@ -136,6 +163,9 @@ def move_node_another_block(cell, data):
 
 
 def update_distribution(circuit, data):
+    """
+    update the distribution for each net
+    """
     for net in circuit.nets:
         data.reset_net_distribution(net)
         for cell in net.cells:
@@ -144,6 +174,9 @@ def update_distribution(circuit, data):
 
 
 def calculate_gains(circuit, data):
+    """
+    calculate the gain for each node
+    """
     for cell in circuit.cells:
         data.reset_node_gain(cell)
         F = data.get_node_block_id(cell)  # from block id
@@ -157,14 +190,23 @@ def calculate_gains(circuit, data):
 
 
 def calculate_cutsize(circuit, data):
-    return reduce(lambda a, b: a + (1 if is_cut(b, data) else 0), circuit.nets, 0)
+    """
+    :return: the cutsize fo the current partition
+    """
+    return reduce(lambda a, b: a + is_cut(b, data), circuit.nets, 0)
 
 
-def is_cut(net, data):
+def is_cut(net, data) -> bool:
+    """
+    :return: True if the given net is a cut, otherwiese False
+    """
     return (data.get_net_distribution(net, 0) > 0) and (
             data.get_net_distribution(net, 1) > 0
     )
 
 
-def get_pmax(circuit):
+def get_pmax(circuit) -> int:
+    """
+    :return: pmax, which is the maximum net size
+    """
     return reduce(lambda a, b: max(a, b.get_nets_size()), circuit.cells, 0)
