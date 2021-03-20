@@ -9,4 +9,5 @@ Optional arguments:
 | Parameter                  | Default       | Description                         |	
 | :------------------------- |:-------------:| :---------------------------------- |
 | -h, --help                 |               | show this help message and exit
-| -v, --verbose              | False         | enable verbose logging
+| -v, --verbose              | False         | enable verbose logging    
+| -q, --quick                | False         | enable quick mode

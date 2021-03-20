@@ -40,17 +40,18 @@ def kl_inner_loop(circuit: Circuit, data: Data, app=None, genetic=False):
 
     data.print_blocks_size()
 
-    if app is not None:
+    if app is None or app.quick:
+        if data.has_unlocked_nodes():
+            kl_inner_loop(circuit, data, app, genetic)
+        else:
+            kl_inner_stop(circuit, data, app, genetic)
+    else:
         app.update_canvas(data)
         # inner loop stop until no unlocked nodes remains
         if data.has_unlocked_nodes():
             app.root.after(1, kl_inner_loop, circuit, data, app, genetic)
         else:  # ineer loop exit
             app.root.after(1000, kl_inner_stop, circuit, data, app, genetic)
-    elif data.has_unlocked_nodes():
-        kl_inner_loop(circuit, data, app, genetic)
-    else:
-        kl_inner_stop(circuit, data, app, genetic)
 
 
 def kl_inner_stop(circuit: Circuit, data: Data, app=None, genetic=False):

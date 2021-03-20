@@ -15,6 +15,7 @@ class App:
     def __init__(self, args=None) -> None:
         init_logging(args.verbose)
 
+        self.quick = args.quick
         self.circuit = Circuit()
         self.root = Tk()
         self.__init_gui()
@@ -129,7 +130,7 @@ class App:
         self.cols = ceil(max_cells_per_block / self.rows)
 
         w_size = (
-            self.root.winfo_screenwidth() * 0.8 / (2 * (self.cols + 1)) - self.node_pad
+                self.root.winfo_screenwidth() * 0.8 / (2 * (self.cols + 1)) - self.node_pad
         )
         h_size = self.root.winfo_screenheight() * 0.8 / self.rows - self.node_pad
         # calculate the size of cells in the canvas, depends on the number of rows and cols
@@ -140,7 +141,9 @@ class App:
         canvas.config(width=self.cw, height=self.ch)
 
     def update_canvas(self, data):
-        """Draw the canvas and update statistics being displayed."""
+        """
+        update the canvas and update statistics being displayed.
+        """
         canvas = self.root.nametowidget("top.canvas")
 
         self.__update_cells(canvas, data)
@@ -149,6 +152,9 @@ class App:
         self.__update_info("info.iteration", data.iteration)
 
     def __update_cells(self, canvas, data):
+        """
+        update cells in canvas.
+        """
         x = [self.size // 2, self.cw // 2 + self.size // 2]
         y = [self.size // 2, self.size // 2]
         node_count = [0, 0]
@@ -165,7 +171,9 @@ class App:
             y[block_id] = self.size // 2 if next_col else y2 + self.node_pad
 
     def __update_nets(self, canvas):
-        """Draw nets in canvas."""
+        """
+        update nets in canvas.
+        """
         canvas.delete("netlist")
 
         for net in self.circuit.nets:
