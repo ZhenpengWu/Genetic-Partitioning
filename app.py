@@ -45,11 +45,11 @@ class App:
         self.__init_canvas()
         self.update_partition_button(True)
 
-    def __partitioning(self, algorihtm):
+    def __partitioning(self, algorithm):
         """
         called when "partition" is pressed, execture the branch and bound partitioning
         """
-        if algorihtm == "kl":
+        if algorithm == "kl":
             kl(self.circuit, self)
         else:
             genetic(self.circuit, self)
@@ -130,7 +130,7 @@ class App:
         self.cols = ceil(max_cells_per_block / self.rows)
 
         w_size = (
-                self.root.winfo_screenwidth() * 0.8 / (2 * (self.cols + 1)) - self.node_pad
+            self.root.winfo_screenwidth() * 0.8 / (2 * (self.cols + 1)) - self.node_pad
         )
         h_size = self.root.winfo_screenheight() * 0.8 / self.rows - self.node_pad
         # calculate the size of cells in the canvas, depends on the number of rows and cols

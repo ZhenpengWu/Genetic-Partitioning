@@ -50,7 +50,7 @@ def kl_inner_loop(circuit: Circuit, data: Data, app=None, genetic=False):
         # inner loop stop until no unlocked nodes remains
         if data.has_unlocked_nodes():
             app.root.after(1, kl_inner_loop, circuit, data, app, genetic)
-        else:  # ineer loop exit
+        else:  # inner loop exit
             app.root.after(1000, kl_inner_stop, circuit, data, app, genetic)
 
 
@@ -98,7 +98,7 @@ def init_partition(circuit, block_ids=None) -> Data:
         random_cids = random.sample(range(n), n)
         block_ids = [cid % 2 for i, cid in enumerate(random_cids)]
 
-    # initialzie a data container for the current partition
+    # initialize a data container for the current partition
     data = Data(pmax, nets_size, block_ids)
     # update the nets distribution in the current partition
     update_distribution(circuit, data)
@@ -124,10 +124,12 @@ def select_max_gain_node(data: Data):
     block1_size, block1_max_gain = data.get_block_size(1), data.peek_block_max_gain(1)
 
     if block0_size > block1_size or (
-            block0_size == block1_size and block0_max_gain > block1_max_gain):
+        block0_size == block1_size and block0_max_gain > block1_max_gain
+    ):
         return data.pop_block_max_gain(0)
     elif block0_size < block1_size or (
-            block0_size == block1_size and block0_max_gain < block1_max_gain):
+        block0_size == block1_size and block0_max_gain < block1_max_gain
+    ):
         return data.pop_block_max_gain(1)
     else:  # break tie
         return data.pop_block_max_gain(random.choice([0, 1]))
@@ -135,7 +137,7 @@ def select_max_gain_node(data: Data):
 
 def move_node_another_block(cell: Cell, data: Data):
     """
-    move the max gain node to anothe block
+    move the max gain node to another block
     """
     F = data.get_node_block_id(cell)  # from block id
     T = (F + 1) % 2  # to block id
@@ -210,7 +212,7 @@ def is_cut(net: Net, data: Data) -> bool:
     :return: True if the given net is a cut, otherwiese False
     """
     return (data.get_net_distribution(net, 0) > 0) and (
-            data.get_net_distribution(net, 1) > 0
+        data.get_net_distribution(net, 1) > 0
     )
 
 

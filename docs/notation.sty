@@ -1,0 +1,140 @@
+\usepackage{tikz}
+
+%% General machinery
+\newcommand{\AutoAdjust}[3]{\mathchoice{ \left #1 #2  \right #3}{#1 #2 #3}{#1 #2 #3}{#1 #2 #3} }
+\newcommand{\Xcomment}[1]{{}}
+\newcommand{\eval}[1]{\left.#1\vphantom{\big|}\right|}
+\newcommand{\inteval}[1]{\Big[#1\Big]}
+\newcommand{\InParentheses}[1]{\AutoAdjust{(}{#1}{)}}
+\newcommand{\InBrackets}[1]{\AutoAdjust{[}{#1}{]}}% {\left[{#1}\right]}
+\newcommand{\Ex}[2][]{\operatorname{\mathbf E}_{#1}\InBrackets{#2}}
+\newcommand{\Prx}[2][]{\operatorname{\mathbf{Pr}}_{#1}\InBrackets{#2}}
+\def\prob{\Prx}
+\def\expect{\Ex}
+\newcommand{\probq}[2]{x_{#1}\AutoAdjust{(}{#2}{)}}
+\newcommand{\cumprobq}[2]{X_{#1}\AutoAdjust{(}{#2}{)}}
+\newcommand{\super}[1]{^{(#1)}}
+\newcommand{\dd}{\mathrm{d}}  % for integrals
+\newcommand{\given}{\;\mid\;}
+\newcommand{\eps}{\epsilon}
+
+\newcommand{\noaccents}[1]{#1}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\cC}{\mathcal{C}}
+\newcommand{\cD}{\mathcal{D}}
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\cL}{\mathcal{L}}
+
+\newcommand{\newagentvar}[3][\noaccents]{%
+\expandafter\newcommand\expandafter{\csname #2\endcsname}{#1{#3}}%
+\expandafter\newcommand\expandafter{\csname #2s\endcsname}{#1{\boldsymbol{#3}}}%
+\expandafter\newcommand\expandafter{\csname #2smi\endcsname}[1][i]{#1{\boldsymbol{#3}}_{-##1}}%
+\expandafter\newcommand\expandafter{\csname #2i\endcsname}[1][i]{#1{#3}_{##1}}%
+\expandafter\newcommand\expandafter{\csname #2ith\endcsname}[1][i]{#1{#3}_{(##1)}}%
+}
+
+\newcommand{\matroid}{\mathcal M}
+\newcommand{\classp}{\mathsf {P}}
+\newcommand{\classnp}{\mathsf {NP}}
+\newcommand{\preduce}{\leq_{\classp}}
+\newcommand{\ALGO}{\mathcal{A}}
+
+\usetikzlibrary{positioning,chains,fit,shapes,calc,arrows.meta,arrows,automata}
+
+\delimiterfactor=1100
+
+\setlength{\delimitershortfall}{0pt}
+
+\newcommand{\argmax}{\operatorname{arg\,max}}
+\newcommand{\argmin}{\operatorname{arg\,min}}
+
+\newtheorem{theorem}{Theorem}[enumi]%
+
+\newaliascnt{lemma}{theorem}
+\newtheorem{lemma}[lemma]{Lemma}%
+\aliascntresetthe{lemma}
+\newtheorem*{rellemma}{Lemma}
+\providecommand*{\lemmaautorefname}{Lemma}
+
+\newtheorem{claim}{Claim}%
+\newcommand{\claimautorefname}{Claim}
+
+\newtheorem{corollary}{Corollary}%
+
+\newtheorem{condition}{Condition}%
+\newcommand{\conditionautorefname}{Cond.}
+
+\newtheorem{proposition}{Proposition}%
+\newcommand{\propositionautorefname}{Proposition}
+
+\newtheorem{algo}{Algorithm}%
+\def\algoautorefname{Algorithm}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+
+\newtheorem{example}{Example}
+\newcommand{\exampleautorefname}{Ex.}
+
+\newtheorem{remark}{Remark}
+\newcommand{\remarkautorefname}{Remark}
+
+% \newenvironment{proofof}[1]{\vspace{0.1in} {\sc Proof of #1.}}{\hfill\qed}
+% \newenvironment{proofsk}{\vspace{0.1in} {\sc Proof sketch.}}{\hfill\qed}
+
+\def\algorithmautorefname{Algorithm}
+\def\corollaryautorefname{Corollary}
+\def\lemmaautorefname{Lemma}
+\def\sectionautorefname{Section}
+\def\subsectionautorefname{Section}
+\def\defiautorefname{Definition}
+
+\algrenewcommand\algorithmicrequire{{\sc Input:}}
+\algrenewcommand\algorithmicensure{{\sc Output:}}
+
+\newcommand{\alg}{\mathcal{A}}
+\newcommand{\opt}{\textsc{OPT}}
+
+\algdef{SE}[SUBALG]{Indent}{EndIndent}{}{\algorithmicend\ }%
+\algtext*{Indent}
+\algtext*{EndIndent}
+
+\makeatletter
+\newcommand{\algmargin}{\the\ALG@thistlm}
+\makeatother
+\newlength{\whilewidth}
+\settowidth{\whilewidth}{\algorithmicwhile\ }
+\algdef{SE}[parWHILE]{parWhile}{EndparWhile}[1]
+  {\parbox[t]{\dimexpr\linewidth-\algmargin}{%
+     \hangindent\whilewidth\strut\algorithmicwhile\ #1\ \algorithmicdo\strut}}{\algorithmicend\ \algorithmicwhile}%
+\algnewcommand{\parState}[1]{\State%
+  \parbox[t]{\dimexpr\linewidth-\algmargin}{\strut #1\strut}}
+
+
+\let\oldemptyset\emptyset
+\let\emptyset\varnothing
+
+
+\usepackage{listings}
+\definecolor{javared}{rgb}{0.6,0,0} % for strings
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
+\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
+ 
+\lstset{
+    language=Java,
+    basicstyle=\scriptsize\tt,
+    keywordstyle=\color{javapurple}\bfseries,
+    stringstyle=\color{javared},
+    commentstyle=\color{javagreen},
+    morecomment=[s][\color{javadocblue}]{/**}{*/},
+    numbers=left,
+    numberstyle=\tiny\color{black},
+    stepnumber=1,
+    numbersep=10pt,
+    tabsize=2,
+    breaklines=true,
+    showspaces=false,
+    showstringspaces=false
+}

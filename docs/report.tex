@@ -1,0 +1,412 @@
+\documentclass[11pt]{article}
+\usepackage{fullpage}
+\usepackage{framed}
+\usepackage[numbers]{natbib}
+\usepackage{dsfont}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{mathrsfs}
+\usepackage{aliascnt}
+\usepackage{bold-extra}
+
+% \usepackage{pstricks}
+% \usepackage{pst-all}
+% \usepackage{pstricks-add}
+% \usepackage{pst-plot}
+\usepackage{graphicx}
+% \usepackage{subfig}
+\usepackage[margin=1in]{geometry}
+% \usepackage{enumerate}
+\usepackage[pdfpagelabels,pdfpagemode=None]{hyperref}
+% \usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage[table,xcdraw]{xcolor}
+
+\usepackage{booktabs}
+\usepackage{multirow}
+
+% \usepackage{longtable}
+\usepackage{fancyvrb}
+
+\usepackage{lscape}
+
+
+\usepackage{subcaption}
+\delimiterfactor=1100
+
+\setlength{\delimitershortfall}{0pt}
+
+\usepackage{notation}
+
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\title{\textbf{\textsc{Genetic Algorithm and Graph Partitioning}}}
+\graphicspath{ {images/} }
+
+\date{
+    \today
+}
+
+\author{
+  Zhenpeng Wu\\
+  28125152
+}
+
+\begin{document}
+
+\maketitle
+
+\section{\textsc{Project Overview}}
+
+Given a graph \(G = (V, E)\) on \(n\) vertices, where \(V\) is the set of vertices and \(E\) is the 
+set of edges, a balanced \textit{two-way partition} is a partitioning of the vertex set \(V\) into 
+\textit{two} disjoint subsets where the difference of cardinalities between them is at most one. The
+graph bisection problem is a well-known \(\classnp\)-hard problem. There are a number of heuristics 
+algorithm that seems to work well but have no performance guarantee are used, and the most popular 
+one is \textit{the Kernighan-Lin Algorithm (KL)}~\cite{6771089} or \textit{the Fiduccia-Mattheyses Algorithm (FM)}~\cite{1585498}. 
+In addition, Bui~\textit{et.\,al.}~\cite{508322} also proposed a \textit{Genetic Algorithm (GA)} for 
+the graph partitioning problem.
+
+In this project, I reimplement the KL / FM Algorithm and Bui's Genetic Algorithm and analyze their 
+performance. All of the source code and the report are hosted on GitHub (\url{https://github.com/ZhenpengWu/Genetic-Partitioning}). 
+A \texttt{README} file containing instructions on how to run the program is also included in the 
+repository.
+
+\section{\textsc{Kernighan-Lin / Fiduccia-Mattheyses Algorithm}}
+
+\subsection{Overview of the Algorithm}
+
+The Kernighan-Lin / Fiduccia-Mattheyses algorithm for finding a bisection of a graph is a local 
+optimization algorithm that improves upon a given initial bisection by swapping equal-sized subsets 
+of the bisection to create a new bisection. This process is repeated on the new bisection either a 
+fixed number of times or until no improvement can be obtained. Fig.~\ref{alg:kl} shows the structure 
+of the KL / FM algorithm.
+
+\begin{figure}[H]
+	\small
+	\begin{Verbatim}[tabsize=4,xleftmargin=5mm,numbers=left]
+		for a small number of passes {
+			unlock all nodes;
+			while some nodes are unlocked {
+				calculate all gains;
+				choose node with highest gain 
+					whose movement would not cause an imbalance;
+				move node to other block and lock it;
+			}
+			choose the best cut seen in this pass;
+		}
+	\end{Verbatim}
+	\caption{The Kernighan-Lin / Fiduccia-Mattheyses Algorithm}
+	\label{alg:kl}
+\end{figure}
+
+
+\subsection{Handling of the Multi-Sink Nets}
+
+To handle the multi-sink nets, my implementation follows the implementation of the algorithm 
+described in~\cite{1585498}. First, a \textit{net's distribution} as a tuple is defined for each net,  
+where the first number is the number of nodes in the first block, and the second number is the 
+number of nodes in the second block. Also, the authors defined a \textit{critical net} as a net 
+that has a node that if moved would change the net's cut state. Also, based on the the authors' 
+observation, a net is critical if, in its distribution, at least one of the numbers in the tuple 
+is equal to \(0\) or \(1\).
+
+\subsection{Efficiency}
+
+With the efficiency consideration, my implementation follows the implementation of the algorithm 
+described in~\cite{1585498} as well. Specifically, the authors defined \(P\) as the total number 
+of pins in the circuit. The runtime of the original work is worse than \(O(P^2)\) per iteration, 
+but the runtime of their implementation is reduced to \(O(P)\) per iteration.
+
+The main work of an iteration involves selecting a base node with the highest gain value, moving 
+it to another block, and updating the gains of the neighbor node. Therefore, first, in order to 
+select a base node efficiently, a bucket array of possible gain values is used, and it ranges from 
+\texttt{-pmax} to \texttt{pmax}, where \texttt{pmax} is the maximum number of pins across all nodes. 
+Each bucket contains a list of nodes that have the same gain value as its index. The use of such a 
+structure allows selecting a base node in constant time. Second, the authors defined routines for 
+efficiently updating the gains of all neighbor nodes of the base cell. Essentially the various 
+updates are turned into a series of gain increments and decrements. Therefore, to combine the fact 
+that only critical nets need to have their node gains updated, it allows implementing this step 
+in linear time.
+
+\section{\textsc{Genetic Algorithm For Graph Partitioning}}
+
+\subsection{Overview of the Algorithm}
+
+A genetic algorithm starts with a set of initial solutions (\textit{chromosomes}), called a 
+\textit{population}. In my implementation, the population size \(p\) is set to \(50\). This 
+population then evolves into different populations for several iterations. In the end, the algorithm
+returns the best member of the population as the solution to the problem. For each iteration, the 
+evolution process proceeds as follows. Two members of the population are chosen as parents based on
+some probability distribution. These two members are then combined through a \textit{crossover} 
+operator to produce offspring. Then, this offspring is then modified by a \textit{mutation} operator
+to introduce unexplored search space to the population, enhancing the diversity of the population. 
+The offspring is tested to see if it is suitable for the population. In addition, the genetic 
+algorithm generates only one offspring per generation. If it is, a \textit{replacement} scheme is 
+used to select a member of the population and replace it with the new offspring. Then, the evolution 
+process is repeated until a certain condition is met. Otherwise, a \textit{local improvement} 
+heuristic, typically after mutation, it would be called \textit{hybrid} GA. Fig.~\ref{alg:ga} shows 
+the structure of the genetic algorithm for graph bisection.
+
+\begin{figure}[H]
+	\small
+	\begin{Verbatim}[tabsize=4,xleftmargin=5mm,numbers=left]
+		create initial population of fixed size p;
+		do {
+				choose parent1 and parent2 from population;
+				offspring = crossover(parent1, parent2);
+				mutation(offspring);
+				local-improvement(offspring);
+				replace(population, offspring);
+			} until (stopping condition);
+		report the best answer;
+	\end{Verbatim}	
+	\caption{The Genetic Algorithm for Graph Bisection}
+	\label{alg:ga}
+\end{figure}
+
+
+\subsection{Parents Selection}
+
+In order to select a parent proportionally (\textit{proportional selection}), a fitness value is
+calculated for each solution in the population from its cut size. The fitness value \(F_i\) of a 
+solution \(i\) is calculated as follows:
+
+\begin{align*}
+	F_i = (C_w - C_i) + (C_w - C_b) / 3,
+\end{align*}
+
+\noindent
+where \(C_w\) is the cut size of the worst solution in the population, \(C_b\) is the cut size of 
+the best solution in the population, and \(C_i\) is the cut size of solution \(i\).
+
+
+\subsection{The Crossover and Mutation Operators}
+
+A crossover operator creates a new offspring chromosome by combining parts of the two parent 
+chromosomes. My implementation employs the 5 cut points crossover, a cut point divides the 
+chromosome into two disjoint parts. 5 cut points are randomly selected and are the same on both
+parent chromosomes, and they divide the parent chromosome into 6 disjoints part. For the first 
+crossover operator, let this be offspring 1, the even part of parent 1 is copied to the same 
+location of offspring 1. Similarly, the odd part of parent 2 is copied to the same locations
+of offspring 1. For the second crossover operator, let this be offspring 2, it is the same as
+the first operation except that the complement value of the odd part of parent 2 is copied to 
+the same locations of offspring 2. Fig.~\ref{fig:M1} shows an example of 5 cut points crossover.
+
+\begin{figure}[H]
+	\centering
+	\resizebox{\linewidth}{!}{
+
+		  \begin{tikzpicture}[-,>=stealth',shorten >=1pt,auto,node distance=2cm,semithick]
+			
+				\tikzstyle{every state}=[text=black]			
+				\tikzstyle{every node}=[font=\fontsize{60}{0}\selectfont]			
+
+				\node[red] (p1p1) {000};
+				\node[right of=p1p1, blue] (p1p2) {110};
+				\node[right of=p1p2, red] (p1p3) {0000};
+				\node[right of=p1p3, blue] (p1p4) {101};
+				\node[right of=p1p4, red] (p1p5) {11};
+				\node[right of=p1p5, blue] (p1p6) {11011};
+
+				\node[below of=p1p1,yshift=-1.5cm,xshift=-20em,red] (o1p1) {000};
+				\node[below of=p1p2,yshift=-1.5cm,xshift=-20em,blue] (o1p2) {111};
+				\node[below of=p1p3,yshift=-1.5cm,xshift=-20em,red] (o1p3) {0000};
+				\node[below of=p1p4,yshift=-1.5cm,xshift=-20em,blue] (o1p4) {000};
+				\node[below of=p1p5,yshift=-1.5cm,xshift=-20em,red] (o1p5) {11};
+				\node[below of=p1p6,yshift=-1.5cm,xshift=-20em,blue] (o1p6) {00000};
+
+				\node[below of=p1p1,yshift=-1.5cm,xshift=20em,red] (o2p1) {000};
+				\node[below of=p1p2,yshift=-1.5cm,xshift=20em,blue] (o2p2) {000};
+				\node[below of=p1p3,yshift=-1.5cm,xshift=20em,red] (o2p3) {0000};
+				\node[below of=p1p4,yshift=-1.5cm,xshift=20em,blue] (o2p4) {111};
+				\node[below of=p1p5,yshift=-1.5cm,xshift=20em,red] (o2p5) {11};
+				\node[below of=p1p6,yshift=-1.5cm,xshift=20em,blue] (o2p6) {11111};
+				
+				\node[below of=p1p1,yshift=-5cm,red] (p2p1) {011};
+				\node[below of=p1p2,yshift=-5cm,blue] (p2p2) {111};
+				\node[below of=p1p3,yshift=-5cm,red] (p2p3) {1011};
+				\node[below of=p1p4,yshift=-5cm,blue] (p2p4) {000};
+				\node[below of=p1p5,yshift=-5cm,red] (p2p5) {11};
+				\node[below of=p1p6,yshift=-5cm,blue] (p2p6) {00000};
+
+				\node[draw,dotted,fit=(p1p1) (p1p6)] (p1box) {};
+				\node[draw,dotted,fit=(o1p1) (o1p6)] (o1box) {};
+				\node[draw,dotted,fit=(p2p1) (p2p6)] (p2box) {};
+				\node[draw,dotted,fit=(o2p1) (o2p6)] (o2box) {};
+
+				\node[left of=p1box,xshift=-20em] (p1) {\textbf{parent1}};
+				\node[right of=p2box, xshift=20em] (p2) {\textbf{parent2}};
+				\node[left of=o1box, xshift=-20em] (o1) {\textbf{offspring1}};
+				\node[right of=o2box, xshift=20em] (o2) {\textbf{offspring2}};
+
+				\draw
+				(p1p1.south) edge[-{Latex[length=3mm]}] node{} (o1p1.north)
+				(p1p1.south) edge[-{Latex[length=3mm]}] node{} (o2p1.north)
+				(p2p2.north) edge[-{Latex[length=3mm]}] node{} (o1p2.south)
+				(p2p2.north) edge[-{Latex[length=3mm]}] node{} (o2p2.south)
+
+				(p1p3.south) edge[-{Latex[length=3mm]}] node{} (o1p3.north)
+				(p1p3.south) edge[-{Latex[length=3mm]}] node{} (o2p3.north)
+				(p2p4.north) edge[-{Latex[length=3mm]}] node{} (o1p4.south)
+				(p2p4.north) edge[-{Latex[length=3mm]}] node{} (o2p4.south)
+
+				(p1p5.south) edge[-{Latex[length=3mm]}] node{} (o1p5.north)
+				(p1p5.south) edge[-{Latex[length=3mm]}] node{} (o2p5.north)
+				(p2p6.north) edge[-{Latex[length=3mm]}] node{} (o1p6.south)
+				(p2p6.north) edge[-{Latex[length=3mm]}] node{} (o2p6.south)
+				;
+
+				\draw 
+				(p1.east) edge[-{Latex[length=3mm]}] node{} (p1box.west)
+				(o1.east) edge[-{Latex[length=3mm]}] node{} (o1box.west)
+				(p2.west) edge[-{Latex[length=3mm]}] node{} (p2box.east)
+				(o2.west) edge[-{Latex[length=3mm]}] node{} (o2box.east);
+
+		  \end{tikzpicture}
+	}
+	\caption{Crossover operator with five cut points} \label{fig:M1}
+\end{figure}
+
+A mutation operator as follows. \(m\) positions on the chromosome are selected at random and their
+values are reversed, where \(m\) is a uniform random integer variable on the interval \([0, n/100]\). 
+In addition, to maintain the balanced condition, a random point on the chromosome is selected and 
+change the number 1s to 0s (or 0s to 1s) starting at that point on to the right until the chromosome 
+is balanced.
+
+
+\subsection{Local Improvement}
+
+After crossover and mutation, a local improvement is applied to the offspring. With local improvement, 
+GAs usually converge in considerably fewer iterations. In Bui's GA, a pass of KL algorithm is used 
+to perform the local improvement with the consideration of runtime.
+
+\subsection{Replacement Scheme}
+
+After having generated a new offspring and trying to locally improve it, GA replaces a member of 
+the population with the new offspring. A combined replacement scheme is used, when an offspring 
+tries to first replace the more similar parent, measured in Hamming distance and if it fails, then 
+it tries to replace the other parent. But if the offspring is worse than both parents, the most 
+inferior member of the population is replaced.
+
+\subsection{Stoppint Criterion}
+
+Because the combined replacement scheme is used, the stopping criterion is to stop when 80\% of 
+the population is occupied by solutions with the same quality, whose chromosomes are not necessarily 
+the same.
+
+
+\section{\textsc{Experimental Results}}
+
+I implemented the algorithms in Python. In order to evaluate the implemented algorithms, the 
+experiments were conducted on the benchmarks provided in the assignments, and the results is shown 
+in Table~\ref{table:result} and all graphic results could be found in the \href{https://github.com/ZhenpengWu/Genetic-Partitioning/tree/master/docs/images}{\texttt{images}} directory.
+
+\begin{table}[H]
+	\small
+	\centering
+	\begin{tabular}{ C{8em} |  C{5em} |  C{5em} | C{5em} |  C{5em} | C{5em}| C{5em} }
+		\hline
+		\multirow{2}{*}{\textbf{Benchmark}}
+		& \multicolumn{2}{c|}{\textbf{Branch and Bound}}
+		& \multicolumn{2}{c|}{\textbf{Kernighan-Lin}}
+		& \multicolumn{2}{c}{\textbf{Genetic}} \\ \cline{2-7}
+		& \textbf{Cost} & \textbf{Runtime}
+		& \textbf{Cost} & \textbf{Runtime}
+		& \textbf{Cost} & \textbf{Runtime} \\
+		\hline
+		\hline
+		alu2             & N/A & N/A          & 30    & 4 s          & 23    & 50 s         \\
+		\hline
+		apex1            & N/A & N/A          & 140   & 5 s          & 107   & 312 s        \\
+		\hline
+		apex4            & N/A & N/A          & 155   & 8 s          & 144   & 567 s        \\
+		\hline
+		C880             & N/A & N/A          & 35    & 5 s          & 27    & 53 s         \\
+		\hline
+		cc               & 4   & 57 min       & 4     & 3 s          & 4     & 7 s          \\
+		\hline
+		cm82a            & 1   & \(\leq\) 1 s & 1     & 2 s          & 1     & 3 s          \\
+		\hline
+		cm138a           & 4   & 1 s          & 4     & 4 s          & 4     & 4 s          \\
+		\hline
+		cm150a           & 6   & 9 min        & 6     & 1 s          & 6     & 4 s          \\
+		\hline
+		cm151a           & 5   & 1 s          & 4     & 1 s          & 4     & 2 s          \\
+		\hline
+		cm162a           & 6   & 2 min        & 6     & 3 s          & 6     & 6 s          \\
+		\hline
+		con1             & 4   & \(\leq\) 1 s & 4     & 1 s          & 4     & 3 s          \\
+		\hline
+		cps              & N/A & N/A          & 115   & 6 s          & 92    & 447 s        \\
+		\hline
+		e64              & N/A & N/A          & 61    & 5 s          & 47    & 175 s        \\
+		\hline
+		paira            & N/A & N/A          & 62    & 6 s          & 2     & 230 s        \\
+		\hline
+		pairb            & N/A & N/A          & 59    & 6 s          & 2     & 135 s        \\
+		\hline
+		twocm            & N/A & N/A          & 1     & 4 s          & 1     & 11 s         \\
+		\hline
+		ugly8            & 8   & \(\leq\) 1 s & 8     & \(\leq\) 1 s & 8     & \(\leq\) 1 s \\
+		\hline
+		ugly16           & 16  & 2 s          & 16    & \(\leq\) 1 s & 16    & \(\leq\) 1 s \\
+		\hline
+		z4ml             & 3   & 2 s          & 3     & 2 s          & 3     & 4 s          \\
+		\hline
+		\hline
+		\textbf{Average} & N/A & N/A          & 37.68 & 3.37 s       & 26.53 & 110.53 s     \\
+		\hline
+	\end{tabular}
+	\caption{Table of Results}
+	\label{table:result}
+\end{table}
+
+Based on the table above, we could observed that, first, as we know that the \textit{Branch and Bound Partitioning Algorithm} 
+guarantee to find the optimal solution but the runtime is exponential, thus about half of benchmarks
+are unsolvable. Second, to compare KL and GA, the minimum cut size found by GA is always better than
+that of KL, however, the runtime of KL is much smaller than that of GA, because the number of iterations 
+in KL is small and fixed, whereas the number of iterations in GA is dynamically (typically hundreds of 
+iterations).
+
+
+\begin{figure}[H]
+	\centering
+	\begin{subfigure}[b]{\textwidth}
+		\centering
+		\includegraphics[width=0.8\textwidth]{paira_kl.png}
+		\caption{KL}
+	\end{subfigure}
+	\hfill
+\end{figure}
+\begin{figure}[H]\ContinuedFloat
+	\centering
+	\begin{subfigure}[b]{\textwidth}
+		\centering
+		\includegraphics[width=0.8\textwidth]{paira_genetic.png}
+		\caption{Genetic}
+	\end{subfigure}
+	\caption{Experiment Result on \texttt{paira}}
+\end{figure}
+
+\noindent
+
+\newpage
+
+
+\bibliographystyle{unsrt}
+
+\bibliography{sample.bib}
+
+\nocite{*}
+
+\end{document}
+
+

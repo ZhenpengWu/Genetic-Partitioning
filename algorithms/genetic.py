@@ -57,10 +57,10 @@ def stopping_criterion(population):
     occupied by solution with the same quality
     """
     best, freq = None, Counter()
-    for chromeosome in population:
-        if not best or chromeosome.mincut < best.mincut:
-            best = chromeosome
-        freq[chromeosome.mincut] += 1
+    for chromosome in population:
+        if not best or chromosome.mincut < best.mincut:
+            best = chromosome
+        freq[chromosome.mincut] += 1
     rate = (freq[best.mincut] + freq[best.mincut + 1]) / 50
     logging.info("mincut: {} | rate: {:.2%}".format(best.mincut, rate))
     return rate >= 0.8, best
@@ -70,24 +70,24 @@ def random_population(circuit: Circuit, k=50) -> List[Data]:
     """
     initialize population as k chromosomes, each representing a potential solution
     """
-    popultation = [init_partition(circuit) for _ in range(k)]
-    return popultation
+    population = [init_partition(circuit) for _ in range(k)]
+    return population
 
 
 def select_parents(population):
     """
-    select parents from the polulation, based on the fitness function
+    select parents from the population, based on the fitness function
     """
     # calculate the worst and best cutsize
     worst_cutsize, best_cutsize = population[0].mincut, population[0].mincut
-    for chromeosome in population:
-        worst_cutsize = max(chromeosome.mincut, worst_cutsize)
-        best_cutsize = min(chromeosome.mincut, best_cutsize)
+    for chromosome in population:
+        worst_cutsize = max(chromosome.mincut, worst_cutsize)
+        best_cutsize = min(chromosome.mincut, best_cutsize)
 
     # calculate fitness value for each chromeosome in population
     F, fitness_list, search_list = 0, [], []
-    for chromeosome in population:
-        f = fitness(chromeosome, worst_cutsize, best_cutsize)
+    for chromosome in population:
+        f = fitness(chromosome, worst_cutsize, best_cutsize)
         F += f
         fitness_list.append(f)
         search_list.append(F)
@@ -98,11 +98,11 @@ def select_parents(population):
     return parents, fitness_list
 
 
-def fitness(chromeosome: Data, worst_cutsize, best_cutsize) -> int:
+def fitness(chromosome: Data, worst_cutsize, best_cutsize) -> int:
     """
     :return: fitness_i = (C_w - C_i) + (C_w - C_b) // 3
     """
-    return (worst_cutsize - chromeosome.mincut) + (worst_cutsize - best_cutsize) // 3
+    return (worst_cutsize - chromosome.mincut) + (worst_cutsize - best_cutsize) // 3
 
 
 def search_parent(search_list, F):
@@ -168,9 +168,9 @@ def local_improvement(circuit, offspring):
     :return: data containers for offspring
     """
     res = [init_partition(circuit, child) for child in offspring]
-    for data in res:
-        kl_inner_loop(circuit, data, None, True)
-    return res
+    index = 0 if res[0].mincut < res[1].mincut else 1
+    kl_inner_loop(circuit, res[index], None, True)
+    return res[index]
 
 
 def replace(population, fitness_list, parents_index, offspring):
@@ -181,21 +181,18 @@ def replace(population, fitness_list, parents_index, offspring):
         - else, replace with the most inferior member of the population
     """
     parents = population[parents_index[0]], population[parents_index[1]]
-    used = set()
 
-    for child in offspring:
-        distance0, distance1 = (
-            measure_distance(parents[0], child),
-            measure_distance(parents[1], child),
-        )
-        if child.mincut < parents[0 if distance0 < distance1 else 1].mincut:
-            index = parents_index[0 if distance0 < distance1 else 1]
-        elif child.mincut < parents[1 if distance0 < distance1 else 0].mincut:
-            index = parents_index[1 if distance0 < distance1 else 0]
-        else:
-            index = find_inferior(fitness_list, used)
-        population[index] = child
-        used.add(index)
+    distance0, distance1 = (
+        measure_distance(parents[0], offspring),
+        measure_distance(parents[1], offspring),
+    )
+    if offspring.mincut < parents[0 if distance0 < distance1 else 1].mincut:
+        index = parents_index[0 if distance0 < distance1 else 1]
+    elif offspring.mincut < parents[1 if distance0 < distance1 else 0].mincut:
+        index = parents_index[1 if distance0 < distance1 else 0]
+    else:
+        index = find_inferior(fitness_list)
+    population[index] = offspring
 
 
 def measure_distance(parent, child) -> int:
@@ -210,12 +207,12 @@ def measure_distance(parent, child) -> int:
     return sum([parent_block_ids[i] != child_block_ids[i] for i in range(n)])
 
 
-def find_inferior(fitness_list, used) -> int:
+def find_inferior(fitness_list) -> int:
     """
     :return: the index of the most inferior member
     """
     min1 = -1
     for i, v in enumerate(fitness_list):
-        if (i not in used) and (min1 < -1 or v < fitness_list[min1]):
+        if min1 < -1 or v < fitness_list[min1]:
             min1 = i
     return min1
