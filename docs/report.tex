@@ -140,7 +140,7 @@ in linear time.
 
 \subsection{Overview of the Algorithm}
 
-A genetic algorithm starts with a set of initial solutions (\textit{chromosomes}), called a 
+A genetic algorithm starts with a set of initial solutions (\textit{chromosomes}), called
 \textit{population}. In my implementation, the population size \(p\) is set to \(50\). This 
 population then evolves into different populations for several iterations. In the end, the algorithm
 returns the best member of the population as the solution to the problem. For each iteration, the 
@@ -190,10 +190,10 @@ the best solution in the population, and \(C_i\) is the cut size of solution \(i
 
 \subsection{The Crossover and Mutation Operators}
 
-A crossover operator creates a new offspring chromosome by combining parts of the two parent 
-chromosomes. My implementation employs the 5 cut points crossover, a cut point divides the 
-chromosome into two disjoint parts. 5 cut points are randomly selected and are the same on both
-parent chromosomes, and they divide the parent chromosome into 6 disjoints part. For the first 
+A crossover operator creates new offspring chromosomes by combining parts of the two parent 
+chromosomes. My implementation employs the 5 cut points crossover, where a cut point divides the 
+chromosome into two disjoint parts. Randomly select 5 cut points with the same cutpoint on both 
+parent chromosomes and divide the parent chromosome into 6 disjoint parts. For the first 
 crossover operator, let this be offspring 1, the even part of parent 1 is copied to the same 
 location of offspring 1. Similarly, the odd part of parent 2 is copied to the same locations
 of offspring 1. For the second crossover operator, let this be offspring 2, it is the same as
@@ -275,24 +275,24 @@ the same locations of offspring 2. Fig.~\ref{fig:M1} shows an example of 5 cut p
 	\caption{Crossover operator with five cut points} \label{fig:M1}
 \end{figure}
 
-A mutation operator as follows. \(m\) positions on the chromosome are selected at random and their
-values are reversed, where \(m\) is a uniform random integer variable on the interval \([0, n/100]\). 
-In addition, to maintain the balanced condition, a random point on the chromosome is selected and 
-change the number 1s to 0s (or 0s to 1s) starting at that point on to the right until the chromosome 
-is balanced.
+A mutation operator as follows. Randomly select \(m\) positions on the chromosome and invert their
+values, where \(m\) is a uniform random integer variable on the interval \([0, n / 100]\). In 
+addition, to maintain the balanced condition, a random point on the chromosome is selected and 
+the number 1s is changed to 0s (or from 0s to 1s), starting at that point on to the right until 
+the chromosome is balanced.
 
 
 \subsection{Local Improvement}
 
 After crossover and mutation, a local improvement is applied to the offspring. With local improvement, 
-GAs usually converge in considerably fewer iterations. In Bui's GA, a pass of KL algorithm is used 
-to perform the local improvement with the consideration of runtime.
+GAs usually converge with considerably fewer iterations. In Bui's GA, a pass of KL algorithm is used 
+to perform the local improvement with the runtime consideration.
 
 \subsection{Replacement Scheme}
 
-After having generated a new offspring and trying to locally improve it, GA replaces a member of 
-the population with the new offspring. A combined replacement scheme is used, when an offspring 
-tries to first replace the more similar parent, measured in Hamming distance and if it fails, then 
+After generating new offspring and attempting to locally improve it, GA replaces a member of 
+the population with the new offspring. A combined replacement scheme is used, first, the offspring 
+tries to replace the more similar parent (as measured by Hamming distance) and if it fails, then 
 it tries to replace the other parent. But if the offspring is worse than both parents, the most 
 inferior member of the population is replaced.
 
